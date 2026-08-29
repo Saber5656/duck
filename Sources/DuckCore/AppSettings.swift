@@ -1,0 +1,95 @@
+import Foundation
+
+public enum DuckPosition: String, CaseIterable, Equatable {
+    case bottomRight = "bottomRight"
+    case bottomLeft = "bottomLeft"
+    case topRight = "topRight"
+    case topLeft = "topLeft"
+
+    public var displayName: String {
+        switch self {
+        case .bottomRight:
+            return "Bottom Right"
+        case .bottomLeft:
+            return "Bottom Left"
+        case .topRight:
+            return "Top Right"
+        case .topLeft:
+            return "Top Left"
+        }
+    }
+}
+
+public enum DuckSensitivity: String, CaseIterable, Equatable {
+    case low
+    case medium
+    case high
+
+    public var displayName: String {
+        switch self {
+        case .low:
+            return "Low"
+        case .medium:
+            return "Medium"
+        case .high:
+            return "High"
+        }
+    }
+}
+
+public final class DuckSettingsStore {
+    public enum Key {
+        public static let isListening = "duck.isListening"
+        public static let position = "duck.position"
+        public static let sensitivity = "duck.sensitivity"
+        public static let launchAtLogin = "duck.launchAtLogin"
+    }
+
+    private let defaults: UserDefaults
+
+    public init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
+        self.defaults.register(defaults: [
+            Key.isListening: false,
+            Key.position: DuckPosition.bottomRight.rawValue,
+            Key.sensitivity: DuckSensitivity.medium.rawValue,
+            Key.launchAtLogin: false
+        ])
+    }
+
+    public var isListening: Bool {
+        get { defaults.bool(forKey: Key.isListening) }
+        set { defaults.set(newValue, forKey: Key.isListening) }
+    }
+
+    public var position: DuckPosition {
+        get {
+            guard
+                let rawValue = defaults.string(forKey: Key.position),
+                let position = DuckPosition(rawValue: rawValue)
+            else {
+                return .bottomRight
+            }
+            return position
+        }
+        set { defaults.set(newValue.rawValue, forKey: Key.position) }
+    }
+
+    public var sensitivity: DuckSensitivity {
+        get {
+            guard
+                let rawValue = defaults.string(forKey: Key.sensitivity),
+                let sensitivity = DuckSensitivity(rawValue: rawValue)
+            else {
+                return .medium
+            }
+            return sensitivity
+        }
+        set { defaults.set(newValue.rawValue, forKey: Key.sensitivity) }
+    }
+
+    public var launchAtLogin: Bool {
+        get { defaults.bool(forKey: Key.launchAtLogin) }
+        set { defaults.set(newValue, forKey: Key.launchAtLogin) }
+    }
+}
