@@ -8,6 +8,8 @@ CONTENTS_DIR="$APP_DIR/Contents"
 MACOS_DIR="$CONTENTS_DIR/MacOS"
 INFO_PLIST="$ROOT_DIR/Resources/macOS/Info.plist"
 ENTITLEMENTS="$ROOT_DIR/Resources/macOS/duck.entitlements"
+SPRITES_DIR="$ROOT_DIR/Resources/Sprites"
+APP_SPRITES_DIR="$CONTENTS_DIR/Resources/Sprites"
 
 if [[ "$(uname -s)" != "Darwin" ]]; then
   echo "error: macOS is required to build the duck app bundle" >&2
@@ -28,10 +30,11 @@ BIN_DIR="$(swift build --disable-sandbox -c release --show-bin-path)"
 EXECUTABLE="$BIN_DIR/$PRODUCT_NAME"
 
 rm -rf "$APP_DIR"
-mkdir -p "$MACOS_DIR"
+mkdir -p "$MACOS_DIR" "$APP_SPRITES_DIR"
 
 cp "$EXECUTABLE" "$MACOS_DIR/$PRODUCT_NAME"
 cp "$INFO_PLIST" "$CONTENTS_DIR/Info.plist"
+cp "$SPRITES_DIR"/* "$APP_SPRITES_DIR/"
 chmod +x "$MACOS_DIR/$PRODUCT_NAME"
 
 codesign --force \
