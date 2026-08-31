@@ -25,7 +25,7 @@ for file in "${candidates[@]}"; do
   esac
 
   case "$file" in
-    Package.swift|*.swift|*.plist|*.entitlements|*.sh|*.yml|*.yaml)
+    Package.swift|Sources/*|Tests/*|Resources/*|scripts/*|.github/workflows/*)
       files+=("$file")
       ;;
   esac
