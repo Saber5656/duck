@@ -164,6 +164,8 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func toggleListening(_ sender: NSMenuItem) {
+        guard onboarding == nil else { return }
+
         if settings.isListening {
             settings.isListening = false
             audioSource?.stop()
@@ -250,6 +252,7 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func refreshMenuState() {
+        listeningItem?.isEnabled = onboarding == nil
         listeningItem?.state = settings.isListening ? .on : .off
         launchAtLoginItem?.state = settings.launchAtLogin ? .on : .off
 
@@ -397,6 +400,7 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
             }
         )
         onboarding = controller
+        refreshMenuState()
         controller.showWindow(nil)
     }
 
