@@ -35,7 +35,12 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
         refreshMicrophonePermissionState()
         refreshMenuState()
 
-        if settings.hasCompletedOnboarding {
+        let isExistingInstallation = settings.hasPersistedLegacySettings && !settings.hasCompletedOnboarding
+        if isExistingInstallation {
+            settings.hasCompletedOnboarding = true
+        }
+
+        if settings.hasCompletedOnboarding || isExistingInstallation {
             if settings.isListening, !startListening(showError: false) {
                 settings.isListening = false
                 overlay?.setListening(false)

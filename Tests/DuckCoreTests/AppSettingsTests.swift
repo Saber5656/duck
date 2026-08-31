@@ -53,6 +53,23 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertFalse(store.isListening)
     }
 
+    func testFreshSettingsHaveNoPersistedLegacyValues() {
+        let store = DuckSettingsStore(defaults: makeDefaults())
+
+        XCTAssertFalse(store.hasPersistedLegacySettings)
+    }
+
+    func testPersistedLegacySettingsAreDetectedAndListeningIsPreserved() {
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: DuckSettingsStore.Key.isListening)
+
+        let store = DuckSettingsStore(defaults: defaults)
+
+        XCTAssertTrue(store.hasPersistedLegacySettings)
+        XCTAssertTrue(store.isListening)
+        XCTAssertFalse(store.hasCompletedOnboarding)
+    }
+
     private func makeDefaults(
         file: StaticString = #filePath,
         line: UInt = #line

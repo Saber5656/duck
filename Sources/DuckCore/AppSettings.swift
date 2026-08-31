@@ -47,9 +47,17 @@ public final class DuckSettingsStore {
     }
 
     private let defaults: UserDefaults
+    private let hasPersistedLegacySettingsValue: Bool
 
     public init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
+        // Capture this before register(defaults:) adds fallback values to the lookup chain.
+        self.hasPersistedLegacySettingsValue = [
+            Key.isListening,
+            Key.position,
+            Key.sensitivity,
+            Key.launchAtLogin
+        ].contains { defaults.object(forKey: $0) != nil }
         self.defaults.register(defaults: [
             Key.isListening: false,
             Key.position: DuckPosition.bottomRight.rawValue,
@@ -98,5 +106,9 @@ public final class DuckSettingsStore {
     public var hasCompletedOnboarding: Bool {
         get { defaults.bool(forKey: Key.hasCompletedOnboarding) }
         set { defaults.set(newValue, forKey: Key.hasCompletedOnboarding) }
+    }
+
+    public var hasPersistedLegacySettings: Bool {
+        hasPersistedLegacySettingsValue
     }
 }
