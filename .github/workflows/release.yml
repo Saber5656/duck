@@ -1,0 +1,146 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: macos-14
+    env:
+      GH_TOKEN: ${{ github.token }}
+      DEVELOPER_ID_APPLICATION: ${{ secrets.DEVELOPER_ID_APPLICATION }}
+      DEVELOPER_ID_CERTIFICATE_BASE64: ${{ secrets.DEVELOPER_ID_CERTIFICATE_BASE64 }}
+      DEVELOPER_ID_CERTIFICATE_PASSWORD: ${{ secrets.DEVELOPER_ID_CERTIFICATE_PASSWORD }}
+      BUILD_KEYCHAIN_PASSWORD: ${{ secrets.BUILD_KEYCHAIN_PASSWORD }}
+      APPLE_ID: ${{ secrets.APPLE_ID }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+      HOMEBREW_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+
+      - name: Verify release secrets
+        run: |
+          test -n "$DEVELOPER_ID_APPLICATION"
+          test -n "$DEVELOPER_ID_CERTIFICATE_BASE64"
+          test -n "$DEVELOPER_ID_CERTIFICATE_PASSWORD"
+          test -n "$BUILD_KEYCHAIN_PASSWORD"
+          test -n "$APPLE_ID"
+          test -n "$APPLE_TEAM_ID"
+          test -n "$APPLE_APP_SPECIFIC_PASSWORD"
+          test -n "$HOMEBREW_TAP_TOKEN"
+
+      - name: Verify Homebrew tap
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          gh api \
+            --header 'Accept: application/vnd.github+json' \
+            --header 'X-GitHub-Api-Version: 2022-11-28' \
+            repos/Saber5656/homebrew-tap \
+            --jq '.full_name'
+
+      - name: Privacy guard
+        run: scripts/privacy-guard.sh
+
+      - name: Test
+        run: swift test
+
+      - name: Import Developer ID certificate
+        env:
+          CERTIFICATE_PATH: ${{ runner.temp }}/developer-id.p12
+          KEYCHAIN_PATH: ${{ runner.temp }}/duck-build.keychain-db
+        run: |
+          printf '%s' "$DEVELOPER_ID_CERTIFICATE_BASE64" | base64 --decode > "$CERTIFICATE_PATH"
+          security create-keychain -p "$BUILD_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$BUILD_KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security import "$CERTIFICATE_PATH" \
+            -P "$DEVELOPER_ID_CERTIFICATE_PASSWORD" \
+            -T /usr/bin/codesign \
+            -t cert \
+            -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -s \
+            -k "$BUILD_KEYCHAIN_PASSWORD" \
+            "$KEYCHAIN_PATH"
+          security list-keychains -d user -s "$KEYCHAIN_PATH"
+          security find-identity -v -p codesigning "$KEYCHAIN_PATH" | grep -F "$DEVELOPER_ID_APPLICATION"
+
+      - name: Build universal signed app
+        env:
+          DUCK_ARCHS: arm64,x86_64
+          DUCK_BUILD_NUMBER: ${{ github.run_number }}
+          DUCK_SIGNING_IDENTITY: ${{ secrets.DEVELOPER_ID_APPLICATION }}
+          DUCK_VERSION: ${{ github.ref_name }}
+        run: |
+          DUCK_VERSION="${DUCK_VERSION#v}" scripts/build-macos-app.sh
+          lipo -info .build/macos/duck.app/Contents/MacOS/duck
+          codesign --verify --deep --strict --verbose=2 .build/macos/duck.app
+          codesign -d --entitlements :- .build/macos/duck.app
+
+      - name: Package app
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          RELEASE_VERSION="${RELEASE_VERSION#v}"
+          ditto -c -k --keepParent \
+            .build/macos/duck.app \
+            "$RUNNER_TEMP/duck-${RELEASE_VERSION}.zip"
+
+      - name: Notarize and staple
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          RELEASE_VERSION="${RELEASE_VERSION#v}"
+          xcrun notarytool submit \
+            "$RUNNER_TEMP/duck-${RELEASE_VERSION}.zip" \
+            --apple-id "$APPLE_ID" \
+            --team-id "$APPLE_TEAM_ID" \
+            --password "$APPLE_APP_SPECIFIC_PASSWORD" \
+            --wait
+          xcrun stapler staple .build/macos/duck.app
+          xcrun stapler validate .build/macos/duck.app
+          ditto -c -k --keepParent \
+            .build/macos/duck.app \
+            "$RUNNER_TEMP/duck-${RELEASE_VERSION}.zip"
+
+      - name: Publish GitHub release
+        env:
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          RELEASE_VERSION="${RELEASE_VERSION#v}"
+          ZIP_PATH="$RUNNER_TEMP/duck-${RELEASE_VERSION}.zip"
+          shasum -a 256 "$ZIP_PATH" > "$ZIP_PATH.sha256"
+          gh release create "$GITHUB_REF_NAME" \
+            "$ZIP_PATH" \
+            "$ZIP_PATH.sha256" \
+            --verify-tag \
+            --generate-notes
+
+      - name: Update Homebrew tap
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          RELEASE_VERSION: ${{ github.ref_name }}
+        run: |
+          RELEASE_VERSION="${RELEASE_VERSION#v}"
+          ZIP_PATH="$RUNNER_TEMP/duck-${RELEASE_VERSION}.zip"
+          RELEASE_SHA256="$(awk '{print $1}' "$ZIP_PATH.sha256")"
+          RELEASE_ASSET_URL="https://github.com/${GITHUB_REPOSITORY}/releases/download/${GITHUB_REF_NAME}/duck-${RELEASE_VERSION}.zip" \
+            RELEASE_VERSION="$RELEASE_VERSION" \
+            RELEASE_SHA256="$RELEASE_SHA256" \
+            scripts/update-homebrew-cask.sh
+
+      - name: Remove temporary keychain
+        if: ${{ always() }}
+        env:
+          KEYCHAIN_PATH: ${{ runner.temp }}/duck-build.keychain-db
+        run: security delete-keychain "$KEYCHAIN_PATH" || true
