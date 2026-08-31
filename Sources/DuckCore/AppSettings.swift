@@ -58,13 +58,6 @@ public final class DuckSettingsStore {
             Key.sensitivity,
             Key.launchAtLogin
         ].contains { defaults.object(forKey: $0) != nil }
-        self.defaults.register(defaults: [
-            Key.isListening: false,
-            Key.position: DuckPosition.bottomRight.rawValue,
-            Key.sensitivity: DuckSensitivity.medium.rawValue,
-            Key.launchAtLogin: false,
-            Key.hasCompletedOnboarding: false
-        ])
     }
 
     public var isListening: Bool {
