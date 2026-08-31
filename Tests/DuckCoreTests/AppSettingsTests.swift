@@ -10,6 +10,7 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(store.position, .bottomRight)
         XCTAssertEqual(store.sensitivity, .medium)
         XCTAssertFalse(store.launchAtLogin)
+        XCTAssertFalse(store.hasCompletedOnboarding)
     }
 
     func testSettingsPersistThroughUserDefaults() {
@@ -20,6 +21,7 @@ final class AppSettingsTests: XCTestCase {
         store.position = .topLeft
         store.sensitivity = .high
         store.launchAtLogin = true
+        store.hasCompletedOnboarding = true
 
         store = DuckSettingsStore(defaults: defaults)
 
@@ -27,6 +29,7 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(store.position, .topLeft)
         XCTAssertEqual(store.sensitivity, .high)
         XCTAssertTrue(store.launchAtLogin)
+        XCTAssertTrue(store.hasCompletedOnboarding)
     }
 
     func testInvalidStoredValuesFallBackToDefaults() {
@@ -38,6 +41,33 @@ final class AppSettingsTests: XCTestCase {
 
         XCTAssertEqual(store.position, .bottomRight)
         XCTAssertEqual(store.sensitivity, .medium)
+    }
+
+    func testCompletingOnboardingDoesNotOptIntoListening() {
+        let defaults = makeDefaults()
+        let store = DuckSettingsStore(defaults: defaults)
+
+        store.hasCompletedOnboarding = true
+
+        XCTAssertTrue(store.hasCompletedOnboarding)
+        XCTAssertFalse(store.isListening)
+    }
+
+    func testFreshSettingsHaveNoPersistedLegacyValues() {
+        let store = DuckSettingsStore(defaults: makeDefaults())
+
+        XCTAssertFalse(store.hasPersistedLegacySettings)
+    }
+
+    func testPersistedLegacySettingsAreDetectedAndListeningIsPreserved() {
+        let defaults = makeDefaults()
+        defaults.set(true, forKey: DuckSettingsStore.Key.isListening)
+
+        let store = DuckSettingsStore(defaults: defaults)
+
+        XCTAssertTrue(store.hasPersistedLegacySettings)
+        XCTAssertTrue(store.isListening)
+        XCTAssertFalse(store.hasCompletedOnboarding)
     }
 
     private func makeDefaults(

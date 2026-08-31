@@ -1,4 +1,5 @@
 import AppKit
+import AVFoundation
 import DuckCore
 import ServiceManagement
 
@@ -12,6 +13,9 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
     private var audioSource: AudioLevelSource?
     private var vad = VoiceActivityDetector()
     private var overlay: DuckOverlayController?
+    private var onboarding: DuckOnboardingController?
+    private var microphonePermissionDenied = false
+    private var isRequestingMicrophonePermission = false
 
     init(settings: DuckSettingsStore = DuckSettingsStore()) {
         self.settings = settings
@@ -28,12 +32,24 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
         statusItem = item
         item.menu = buildMenu()
 
+        refreshMicrophonePermissionState()
         refreshMenuState()
 
-        if settings.isListening, !startListening(showError: false) {
+        let isExistingInstallation = settings.hasPersistedLegacySettings && !settings.hasCompletedOnboarding
+        if isExistingInstallation {
+            settings.hasCompletedOnboarding = true
+        }
+
+        if settings.hasCompletedOnboarding || isExistingInstallation {
+            if settings.isListening, !startListening(showError: false) {
+                settings.isListening = false
+                overlay?.setListening(false)
+                refreshMenuState()
+            }
+        } else {
             settings.isListening = false
             overlay?.setListening(false)
-            refreshMenuState()
+            showOnboarding()
         }
     }
 
@@ -126,6 +142,14 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
         privacy.target = self
         menu.addItem(privacy)
 
+        let microphoneSettings = NSMenuItem(
+            title: "Open Microphone Settings",
+            action: #selector(openMicrophoneSettings(_:)),
+            keyEquivalent: ""
+        )
+        microphoneSettings.target = self
+        menu.addItem(microphoneSettings)
+
         menu.addItem(.separator())
 
         let quit = NSMenuItem(
@@ -140,6 +164,8 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func toggleListening(_ sender: NSMenuItem) {
+        guard onboarding == nil else { return }
+
         if settings.isListening {
             settings.isListening = false
             audioSource?.stop()
@@ -214,11 +240,19 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
         alert.runModal()
     }
 
+    @objc private func openMicrophoneSettings(_ sender: Any?) {
+        guard let url = URL(string: "x-apple.systempreferences:com.apple.preference.security?Privacy_Microphone") else {
+            return
+        }
+        NSWorkspace.shared.open(url)
+    }
+
     @objc private func quit(_ sender: NSMenuItem) {
         NSApp.terminate(nil)
     }
 
     private func refreshMenuState() {
+        listeningItem?.isEnabled = onboarding == nil
         listeningItem?.state = settings.isListening ? .on : .off
         launchAtLoginItem?.state = settings.launchAtLogin ? .on : .off
 
@@ -245,13 +279,45 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     private func refreshStatusTitle() {
-        statusItem?.button?.title = settings.isListening ? "duck" : "duck off"
-        statusItem?.button?.toolTip = settings.isListening
-            ? "duck is listening"
-            : "duck is not listening"
+        if settings.isListening {
+            statusItem?.button?.title = "duck"
+            statusItem?.button?.toolTip = "duck is listening"
+        } else if microphonePermissionDenied {
+            statusItem?.button?.title = "duck ⚠"
+            statusItem?.button?.toolTip = "Microphone permission is needed"
+        } else {
+            statusItem?.button?.title = "duck off"
+            statusItem?.button?.toolTip = "duck is not listening"
+        }
     }
 
     private func startListening(showError: Bool) -> Bool {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
+            break
+        case .notDetermined:
+            requestMicrophonePermission()
+            return false
+        case .denied, .restricted:
+            microphonePermissionDenied = true
+            if showError {
+                let alert = NSAlert()
+                alert.messageText = "Microphone permission is needed"
+                alert.informativeText = "Allow duck in System Settings, then try Listening again."
+                alert.addButton(withTitle: "Open Settings")
+                alert.addButton(withTitle: "Cancel")
+                if alert.runModal() == .alertFirstButtonReturn {
+                    openMicrophoneSettings(alert)
+                }
+            }
+            refreshStatusTitle()
+            return false
+        @unknown default:
+            microphonePermissionDenied = true
+            refreshStatusTitle()
+            return false
+        }
+
         if audioSource == nil {
             audioSource = AudioLevelSource(callbackQueue: .main) { [weak self] rms in
                 self?.consume(rms: rms)
@@ -262,6 +328,7 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
         do {
             try audioSource.start()
             vad = VoiceActivityDetector(sensitivity: settings.sensitivity)
+            microphonePermissionDenied = false
             overlay?.setListening(true)
             return true
         } catch {
@@ -276,11 +343,88 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
+    private func requestMicrophonePermission() {
+        guard !isRequestingMicrophonePermission else { return }
+        isRequestingMicrophonePermission = true
+
+        AVCaptureDevice.requestAccess(for: .audio) { [weak self] granted in
+            DispatchQueue.main.async {
+                guard let self else { return }
+                self.isRequestingMicrophonePermission = false
+
+                if granted, self.startListening(showError: true) {
+                    self.settings.isListening = true
+                    self.overlay?.setListening(true)
+                } else {
+                    self.settings.isListening = false
+                    self.microphonePermissionDenied = !granted
+                    self.audioSource?.stop()
+                    self.overlay?.setListening(false)
+                }
+
+                self.refreshMenuState()
+            }
+        }
+    }
+
+    private func refreshMicrophonePermissionState() {
+        switch AVCaptureDevice.authorizationStatus(for: .audio) {
+        case .authorized:
+            microphonePermissionDenied = false
+        case .denied, .restricted:
+            microphonePermissionDenied = true
+        case .notDetermined:
+            microphonePermissionDenied = false
+        @unknown default:
+            microphonePermissionDenied = true
+        }
+    }
+
     private func consume(rms: Float) {
         let time = ProcessInfo.processInfo.systemUptime
         for event in vad.observe(rms: rms, at: time) {
             overlay?.handle(event)
         }
+    }
+
+    private func showOnboarding() {
+        let controller = DuckOnboardingController(
+            onDemoNod: { [weak self] in
+                self?.overlay?.nodOnce()
+            },
+            onGranted: { [weak self] in
+                self?.handleOnboardingGranted()
+            },
+            onDenied: { [weak self] in
+                self?.handleOnboardingDenied()
+            }
+        )
+        onboarding = controller
+        refreshMenuState()
+        controller.showWindow(nil)
+    }
+
+    private func handleOnboardingGranted() {
+        settings.hasCompletedOnboarding = true
+        if startListening(showError: true) {
+            settings.isListening = true
+            overlay?.setListening(true)
+        } else {
+            settings.isListening = false
+            overlay?.setListening(false)
+        }
+        onboarding = nil
+        refreshMenuState()
+    }
+
+    private func handleOnboardingDenied() {
+        settings.hasCompletedOnboarding = true
+        settings.isListening = false
+        microphonePermissionDenied = true
+        audioSource?.stop()
+        overlay?.setListening(false)
+        onboarding = nil
+        refreshMenuState()
     }
 }
 
