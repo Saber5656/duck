@@ -53,14 +53,26 @@ The macOS orange microphone dot is expected while Listening is on. Turn Listenin
 
 ## Verify A Download
 
-Signed releases use the same bundle identifier so macOS can identify an update as the same app. Verify the downloaded bundle before launching it:
+Signed releases use the same bundle identifier so macOS can identify an update as the same app. Verify the downloaded bundle before launching it. First copy the expected Team ID from the official release notes; do not accept a download until that value is published:
 
 ```sh
-codesign --verify --deep --strict --verbose=2 /Applications/duck.app
-codesign -d --entitlements :- /Applications/duck.app
+set -eu
+APP="/Applications/duck.app"
+EXPECTED_TEAM_ID="<PUBLISHED_TEAM_ID>"
+if [ "$EXPECTED_TEAM_ID" = "<PUBLISHED_TEAM_ID>" ]; then
+  echo "Set EXPECTED_TEAM_ID from the official release notes before verifying." >&2
+  exit 2
+fi
+
+codesign --verify --deep --strict --verbose=2 "$APP"
+spctl --assess --type execute --verbose=4 "$APP"
+codesign -d --entitlements :- "$APP"
+ACTUAL_TEAM_ID="$(codesign -dvvv "$APP" 2>&1 | awk -F= '/^TeamIdentifier=/{print $2; exit}')"
+test -n "$ACTUAL_TEAM_ID"
+test "$ACTUAL_TEAM_ID" = "$EXPECTED_TEAM_ID"
 ```
 
-The entitlement output should include App Sandbox and audio input, and should not include a network entitlement. The release workflow also verifies the Universal 2 binary, Developer ID signature, notarization, and stapled ticket before publishing its zip and checksum.
+The entitlement output should include App Sandbox and audio input, and should not include a network entitlement. `codesign --verify` checks signature consistency, while `spctl` performs the macOS Gatekeeper assessment and the Team ID comparison rejects a bundle re-signed by another identity. The release workflow also verifies the Universal 2 binary, Developer ID signature, notarization, and stapled ticket before publishing its zip and checksum. If the official release does not publish an expected Team ID, do not treat the download as verified.
 
 ## FAQ
 
