@@ -37,7 +37,7 @@ final class DuckOnboardingController: NSWindowController, NSWindowDelegate {
     }
 
     func windowWillClose(_ notification: Notification) {
-        finish(granted: false)
+        finish(granted: AVCaptureDevice.authorizationStatus(for: .audio) == .authorized)
     }
 
     private func buildContent() {
