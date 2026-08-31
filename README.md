@@ -14,7 +14,7 @@
 ## Install
 
 ```sh
-brew install --cask Saber5656/homebrew-tap/duck
+brew install --cask Saber5656/tap/duck
 ```
 
 The command becomes available after the first signed release and Homebrew tap setup. You can also download the notarized app from [GitHub Releases](https://github.com/Saber5656/duck/releases). duck supports macOS 13+ on Apple Silicon and Intel.
