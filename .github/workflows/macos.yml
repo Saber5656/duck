@@ -1,0 +1,27 @@
+name: macOS
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: macos-14
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Privacy guard
+        run: scripts/privacy-guard.sh
+
+      - name: Test
+        run: swift test
+
+      - name: Build app bundle
+        run: scripts/build-macos-app.sh
+
+      - name: Verify signed entitlements
+        run: |
+          codesign -d --entitlements - .build/macos/duck.app
