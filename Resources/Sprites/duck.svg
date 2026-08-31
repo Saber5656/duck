@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Original duck spritesheet for duck. Each frame is a 64px cell (32pt at 2x). -->
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="384" height="320" viewBox="0 0 384 320" role="img" aria-label="Original duck spritesheet">
+  <defs>
+    <g id="duck-shape" stroke="#71451f" stroke-width="2" stroke-linejoin="round">
+      <ellipse cx="32" cy="57" rx="19" ry="3" fill="#b8872e" stroke="none" opacity="0.35"/>
+      <ellipse cx="32" cy="38" rx="20" ry="17" fill="#f3bc43"/>
+      <path d="M16 37c2 7 8 11 14 11-2-7-6-12-14-11Z" fill="#d9952e"/>
+      <circle cx="32" cy="25" r="18" fill="#f6c64e"/>
+      <path d="M20 12c4-7 12-9 17-5-4 1-7 4-8 8Z" fill="#e7a52f"/>
+      <path d="M45 25c9 0 13 3 15 7-5 4-11 4-18 1Z" fill="#ed9b2e"/>
+      <path d="M30 32c3 2 6 2 9 0" fill="none" stroke="#8c5a25" stroke-linecap="round"/>
+    </g>
+    <g id="eyes-open" fill="#2c2925" stroke="none">
+      <circle cx="25" cy="23" r="2.25"/>
+      <circle cx="40" cy="23" r="2.25"/>
+    </g>
+    <g id="eyes-closed" fill="none" stroke="#2c2925" stroke-width="2" stroke-linecap="round">
+      <path d="M22 23l6 0"/>
+      <path d="M37 23l6 0"/>
+    </g>
+    <g id="eyes-sleep" fill="none" stroke="#2c2925" stroke-width="2" stroke-linecap="round">
+      <path d="M21 24c2 2 4 2 6 0"/>
+      <path d="M37 24c2 2 4 2 6 0"/>
+    </g>
+    <g id="z-mark" fill="none" stroke="#55758a" stroke-width="2" stroke-linecap="round">
+      <path d="M49 10h7l-7 7h7"/>
+      <path d="M55 3h5l-5 5h5"/>
+    </g>
+  </defs>
+
+  <!-- idle: open, looking, and blink frames -->
+  <g id="idle-0" transform="translate(0 0)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
+  <g id="idle-1" transform="translate(64 0)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-closed"/></g>
+  <g id="idle-2" transform="translate(128 0)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
+
+  <!-- nodding: two-frame loop -->
+  <g id="nodding-0" transform="translate(0 64)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
+  <g id="nodding-1" transform="translate(64 64) rotate(7 32 34)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
+
+  <!-- tilt: held listening pose with a closed-eye blink frame -->
+  <g id="tilt-0" transform="translate(0 128) rotate(-12 32 34)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
+  <g id="tilt-1" transform="translate(64 128) rotate(-12 32 34)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-closed"/></g>
+
+  <!-- bigNod: four-frame one-shot -->
+  <g id="bigNod-0" transform="translate(0 192)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
+  <g id="bigNod-1" transform="translate(64 192) rotate(12 32 34)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
+  <g id="bigNod-2" transform="translate(128 192) translate(0 3) rotate(-8 32 34)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-closed"/></g>
+  <g id="bigNod-3" transform="translate(192 192)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
+
+  <!-- sleep: closed eyes with a quiet Z mark -->
+  <g id="sleep-0" transform="translate(0 256) translate(0 2)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-sleep"/><use xlink:href="#z-mark"/></g>
+  <g id="sleep-1" transform="translate(64 256) translate(0 2)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-closed"/><use xlink:href="#z-mark" opacity="0.65"/></g>
+</svg>
