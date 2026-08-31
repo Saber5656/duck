@@ -2,13 +2,20 @@ import AppKit
 import AVFoundation
 
 final class DuckOnboardingController: NSWindowController, NSWindowDelegate {
+    private let onDemoNod: () -> Void
     private let onGranted: () -> Void
     private let onDenied: () -> Void
     private let statusLabel = NSTextField(wrappingLabelWithString: "")
     private let startButton = NSButton(title: "Start listening", target: nil, action: nil)
     private var didFinish = false
+    private var demoTimer: Timer?
 
-    init(onGranted: @escaping () -> Void, onDenied: @escaping () -> Void) {
+    init(
+        onDemoNod: @escaping () -> Void,
+        onGranted: @escaping () -> Void,
+        onDenied: @escaping () -> Void
+    ) {
+        self.onDemoNod = onDemoNod
         self.onGranted = onGranted
         self.onDenied = onDenied
 
@@ -25,6 +32,10 @@ final class DuckOnboardingController: NSWindowController, NSWindowDelegate {
         buildContent()
     }
 
+    deinit {
+        demoTimer?.invalidate()
+    }
+
     @available(*, unavailable)
     required init?(coder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -34,6 +45,7 @@ final class DuckOnboardingController: NSWindowController, NSWindowDelegate {
         super.showWindow(sender)
         window?.center()
         NSApp.activate(ignoringOtherApps: true)
+        startDemo()
     }
 
     func windowWillClose(_ notification: Notification) {
@@ -45,7 +57,7 @@ final class DuckOnboardingController: NSWindowController, NSWindowDelegate {
         title.font = .boldSystemFont(ofSize: 20)
 
         let explanation = NSTextField(wrappingLabelWithString: ""
-            + "This 10-second introduction explains the whole idea: duck listens while you describe a bug, "
+            + "Watch duck nod for 10 seconds while you read: duck listens while you describe a bug, "
             + "then responds with a small nod. It never understands or answers.")
 
         let privacyHeading = NSTextField(labelWithString: "Privacy first")
@@ -83,6 +95,24 @@ final class DuckOnboardingController: NSWindowController, NSWindowDelegate {
         ])
     }
 
+    private func startDemo() {
+        demoTimer?.invalidate()
+        let endTime = Date().addingTimeInterval(10)
+        onDemoNod()
+        demoTimer = Timer.scheduledTimer(withTimeInterval: 1.5, repeats: true) { [weak self] timer in
+            guard let self else {
+                timer.invalidate()
+                return
+            }
+            guard !self.didFinish, Date() < endTime else {
+                timer.invalidate()
+                self.demoTimer = nil
+                return
+            }
+            self.onDemoNod()
+        }
+    }
+
     @objc private func startListening(_ sender: NSButton) {
         guard !didFinish else { return }
         startButton.isEnabled = false
@@ -109,6 +139,8 @@ final class DuckOnboardingController: NSWindowController, NSWindowDelegate {
     private func finish(granted: Bool) {
         guard !didFinish else { return }
         didFinish = true
+        demoTimer?.invalidate()
+        demoTimer = nil
         if !granted {
             onDenied()
         } else {

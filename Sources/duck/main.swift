@@ -386,6 +386,9 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
 
     private func showOnboarding() {
         let controller = DuckOnboardingController(
+            onDemoNod: { [weak self] in
+                self?.overlay?.nodOnce()
+            },
             onGranted: { [weak self] in
                 self?.handleOnboardingGranted()
             },
