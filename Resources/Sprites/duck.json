@@ -20,10 +20,18 @@
     "idle": {
       "loop": true,
       "frames": [
-        { "name": "idle-0", "rect": [0, 0, 64, 64], "durationMs": 500 },
-        { "name": "idle-1", "rect": [64, 0, 64, 64], "durationMs": 150 },
-        { "name": "idle-2", "rect": [128, 0, 64, 64], "durationMs": 500 }
-      ]
+        { "name": "idle-0", "rect": [0, 0, 64, 64], "durationMs": 500 }
+      ],
+      "blink": {
+        "trigger": "random-delay",
+        "delayMs": { "min": 3000, "max": 8000 },
+        "loop": false,
+        "frames": [
+          { "name": "idle-1", "rect": [64, 0, 64, 64], "durationMs": 150 },
+          { "name": "idle-2", "rect": [128, 0, 64, 64], "durationMs": 500 }
+        ],
+        "returnTo": "idle"
+      }
     },
     "nodding": {
       "loop": true,
