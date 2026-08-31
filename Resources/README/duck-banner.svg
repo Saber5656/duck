@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-labelledby="title description">
+  <title id="title">duck, a quiet rubber-duck debugging companion</title>
+  <desc id="description">A small yellow duck sits beside a terminal while listening to an explanation.</desc>
+  <rect width="1200" height="300" fill="#f3efe4"/>
+  <path d="M0 246H1200" stroke="#d8cfbd" stroke-width="2"/>
+
+  <g transform="translate(72 60)" fill="#242a30">
+    <text x="0" y="74" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="72" font-weight="700">duck</text>
+    <text x="4" y="124" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="26" fill="#59636b">listens, never understands</text>
+    <path d="M4 156h265" stroke="#d9952e" stroke-width="8" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(510 54)">
+    <rect x="0" y="0" width="420" height="170" rx="12" fill="#30363b"/>
+    <circle cx="26" cy="24" r="6" fill="#d96d5b"/>
+    <circle cx="48" cy="24" r="6" fill="#d9b44a"/>
+    <circle cx="70" cy="24" r="6" fill="#7db47c"/>
+    <path d="M30 70h190M30 96h250M30 122h130" stroke="#9fb7c5" stroke-width="8" stroke-linecap="round"/>
+    <path d="M30 148h68" stroke="#d9952e" stroke-width="8" stroke-linecap="round"/>
+  </g>
+
+  <g transform="translate(982 48)" stroke="#71451f" stroke-width="4" stroke-linejoin="round">
+    <ellipse cx="92" cy="194" rx="72" ry="10" fill="#b8872e" stroke="none" opacity=".3"/>
+    <ellipse cx="92" cy="132" rx="74" ry="62" fill="#f3bc43"/>
+    <path d="M33 130c7 24 26 40 52 39-6-25-21-43-52-39Z" fill="#d9952e"/>
+    <circle cx="92" cy="78" r="67" fill="#f6c64e"/>
+    <path d="M47 32c14-25 43-32 63-18-16 5-27 15-32 30Z" fill="#e7a52f"/>
+    <path d="M138 78c33 0 48 10 56 26-20 16-41 15-68 4Z" fill="#ed9b2e"/>
+    <circle cx="67" cy="72" r="8" fill="#2c2925" stroke="none"/>
+    <circle cx="120" cy="72" r="8" fill="#2c2925" stroke="none"/>
+    <path d="M82 102c10 7 20 7 30 0" fill="none" stroke="#8c5a25" stroke-linecap="round"/>
+  </g>
+</svg>
