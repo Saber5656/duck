@@ -38,8 +38,9 @@
   <g id="nodding-0" transform="translate(0 64)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
   <g id="nodding-1" transform="translate(64 64) rotate(7 32 34)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
 
-  <!-- tilt: held listening pose -->
+  <!-- tilt: held listening pose with a closed-eye blink frame -->
   <g id="tilt-0" transform="translate(0 128) rotate(-12 32 34)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
+  <g id="tilt-1" transform="translate(64 128) rotate(-12 32 34)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-closed"/></g>
 
   <!-- bigNod: four-frame one-shot -->
   <g id="bigNod-0" transform="translate(0 192)"><use xlink:href="#duck-shape"/><use xlink:href="#eyes-open"/></g>
