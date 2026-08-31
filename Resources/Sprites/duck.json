@@ -1,0 +1,58 @@
+{
+  "schema": "pet.json-compatible-spritesheet-v1",
+  "version": 1,
+  "image": "duck.svg",
+  "source": "original artwork created for duck; no third-party assets",
+  "scale": 2,
+  "logicalFrameSize": {
+    "width": 32,
+    "height": 32
+  },
+  "frameSizePx": {
+    "width": 64,
+    "height": 64
+  },
+  "sheetSizePx": {
+    "width": 384,
+    "height": 320
+  },
+  "states": {
+    "idle": {
+      "loop": true,
+      "frames": [
+        { "name": "idle-0", "rect": [0, 0, 64, 64], "durationMs": 500 },
+        { "name": "idle-1", "rect": [64, 0, 64, 64], "durationMs": 150 },
+        { "name": "idle-2", "rect": [128, 0, 64, 64], "durationMs": 500 }
+      ]
+    },
+    "nodding": {
+      "loop": true,
+      "frames": [
+        { "name": "nodding-0", "rect": [0, 64, 64, 64], "durationMs": 250 },
+        { "name": "nodding-1", "rect": [64, 64, 64, 64], "durationMs": 250 }
+      ]
+    },
+    "tilt": {
+      "loop": false,
+      "frames": [
+        { "name": "tilt-0", "rect": [0, 128, 64, 64], "durationMs": 500 }
+      ]
+    },
+    "bigNod": {
+      "loop": false,
+      "frames": [
+        { "name": "bigNod-0", "rect": [0, 192, 64, 64], "durationMs": 150 },
+        { "name": "bigNod-1", "rect": [64, 192, 64, 64], "durationMs": 150 },
+        { "name": "bigNod-2", "rect": [128, 192, 64, 64], "durationMs": 150 },
+        { "name": "bigNod-3", "rect": [192, 192, 64, 64], "durationMs": 150 }
+      ]
+    },
+    "sleep": {
+      "loop": true,
+      "frames": [
+        { "name": "sleep-0", "rect": [0, 256, 64, 64], "durationMs": 1000 },
+        { "name": "sleep-1", "rect": [64, 256, 64, 64], "durationMs": 1000 }
+      ]
+    }
+  }
+}
