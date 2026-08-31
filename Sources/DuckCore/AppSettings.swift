@@ -43,6 +43,7 @@ public final class DuckSettingsStore {
         public static let position = "duck.position"
         public static let sensitivity = "duck.sensitivity"
         public static let launchAtLogin = "duck.launchAtLogin"
+        public static let hasCompletedOnboarding = "duck.hasCompletedOnboarding"
     }
 
     private let defaults: UserDefaults
@@ -53,7 +54,8 @@ public final class DuckSettingsStore {
             Key.isListening: false,
             Key.position: DuckPosition.bottomRight.rawValue,
             Key.sensitivity: DuckSensitivity.medium.rawValue,
-            Key.launchAtLogin: false
+            Key.launchAtLogin: false,
+            Key.hasCompletedOnboarding: false
         ])
     }
 
@@ -91,5 +93,10 @@ public final class DuckSettingsStore {
     public var launchAtLogin: Bool {
         get { defaults.bool(forKey: Key.launchAtLogin) }
         set { defaults.set(newValue, forKey: Key.launchAtLogin) }
+    }
+
+    public var hasCompletedOnboarding: Bool {
+        get { defaults.bool(forKey: Key.hasCompletedOnboarding) }
+        set { defaults.set(newValue, forKey: Key.hasCompletedOnboarding) }
     }
 }
