@@ -9,6 +9,9 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
     private var launchAtLoginItem: NSMenuItem?
     private var positionItems: [DuckPosition: NSMenuItem] = [:]
     private var sensitivityItems: [DuckSensitivity: NSMenuItem] = [:]
+    private var audioSource: AudioLevelSource?
+    private var vad = VoiceActivityDetector()
+    private var overlay: DuckOverlayController?
 
     init(settings: DuckSettingsStore = DuckSettingsStore()) {
         self.settings = settings
@@ -19,12 +22,35 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
         NSApp.setActivationPolicy(.accessory)
 
         syncLaunchAtLoginSetting()
+        configureOverlay()
 
         let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem = item
         item.menu = buildMenu()
 
         refreshMenuState()
+
+        if settings.isListening, !startListening(showError: false) {
+            settings.isListening = false
+            overlay?.setListening(false)
+            refreshMenuState()
+        }
+    }
+
+    func applicationWillTerminate(_ notification: Notification) {
+        audioSource?.stop()
+    }
+
+    private func configureOverlay() {
+        do {
+            overlay = try DuckOverlayController.fromMainBundle(
+                position: settings.position,
+                listening: settings.isListening
+            )
+            overlay?.show()
+        } catch {
+            overlay = nil
+        }
     }
 
     private func buildMenu() -> NSMenu {
@@ -114,15 +140,19 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
     }
 
     @objc private func toggleListening(_ sender: NSMenuItem) {
-        settings.isListening.toggle()
+        if settings.isListening {
+            settings.isListening = false
+            audioSource?.stop()
+            overlay?.setListening(false)
+        } else if startListening(showError: true) {
+            settings.isListening = true
+            overlay?.setListening(true)
+        }
         refreshMenuState()
     }
 
     @objc private func nodOnce(_ sender: NSMenuItem) {
-        statusItem?.button?.title = "nod"
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
-            self?.refreshStatusTitle()
-        }
+        overlay?.nodOnce()
     }
 
     @objc private func selectPosition(_ sender: NSMenuItem) {
@@ -134,6 +164,7 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
         }
 
         settings.position = position
+        overlay?.position = position
         refreshMenuState()
     }
 
@@ -146,6 +177,7 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
         }
 
         settings.sensitivity = sensitivity
+        vad = VoiceActivityDetector(sensitivity: sensitivity)
         refreshMenuState()
     }
 
@@ -173,9 +205,10 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
         let alert = NSAlert()
         alert.messageText = "duck"
         alert.informativeText = """
-        Menu-bar skeleton for duck.
+        duck reads microphone buffers only long enough to reduce each one to a single loudness value.
+        The buffer is discarded immediately. No recording, speech recognition, or network access is used.
 
-        Audio, sprite, onboarding, and release features are intentionally out of scope for this issue.
+        The orange microphone indicator is expected while Listening is on. Turn Listening off here to release the microphone.
         """
         alert.addButton(withTitle: "OK")
         alert.runModal()
@@ -216,6 +249,38 @@ final class DuckAppDelegate: NSObject, NSApplicationDelegate {
         statusItem?.button?.toolTip = settings.isListening
             ? "duck is listening"
             : "duck is not listening"
+    }
+
+    private func startListening(showError: Bool) -> Bool {
+        if audioSource == nil {
+            audioSource = AudioLevelSource(callbackQueue: .main) { [weak self] rms in
+                self?.consume(rms: rms)
+            }
+        }
+
+        guard let audioSource else { return false }
+        do {
+            try audioSource.start()
+            vad = VoiceActivityDetector(sensitivity: settings.sensitivity)
+            overlay?.setListening(true)
+            return true
+        } catch {
+            if showError {
+                let alert = NSAlert()
+                alert.messageText = "Listening could not be started"
+                alert.informativeText = error.localizedDescription
+                alert.addButton(withTitle: "OK")
+                alert.runModal()
+            }
+            return false
+        }
+    }
+
+    private func consume(rms: Float) {
+        let time = ProcessInfo.processInfo.systemUptime
+        for event in vad.observe(rms: rms, at: time) {
+            overlay?.handle(event)
+        }
     }
 }
 
