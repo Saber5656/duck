@@ -31,7 +31,7 @@ final class DuckOverlayStateMachineTests: XCTestCase {
 
         XCTAssertEqual(machine.tick(at: 22).state, .idle)
         XCTAssertEqual(machine.tick(at: 22.5), DuckOverlayFrame(state: .bigNod, index: 0))
-        XCTAssertEqual(machine.tick(at: 22.65), DuckOverlayFrame(state: .bigNod, index: 1))
+        XCTAssertEqual(machine.tick(at: 22.66), DuckOverlayFrame(state: .bigNod, index: 1))
         XCTAssertEqual(machine.tick(at: 23.1).state, .idle)
     }
 
