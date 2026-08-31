@@ -27,7 +27,7 @@ duck opens the microphone, so its boundary is deliberately small and inspectable
 | --- | --- |
 | A transient microphone buffer while calculating one RMS loudness value | Speech-to-text, recording, or storing audio |
 | `speechStarted` and `speechEnded` transitions derived from loudness and time | Speaker identification, keyword detection, or audio playback |
-| No microphone-derived value after it is delivered to the in-memory VAD path | Writing audio-derived data to files, logs, or UserDefaults |
+| No raw microphone buffer after it is reduced to one RMS value; the in-memory VAD keeps only derived loudness and timing state | Writing audio-derived data to files, logs, or UserDefaults |
 
 The only microphone buffer access is the [RMS reduction callback](https://github.com/Saber5656/duck/blob/59b726ca53ad4af8f94d55e4831aadf5a811abdf/Sources/DuckCore/AudioLevelSource.swift#L246-L251). The app bundle has no network entitlement or networking dependency; release automation is separate from the shipped app. The [privacy-guard workflow](.github/workflows/macos.yml) rejects forbidden speech, recording, or networking symbols in source, build, entitlement, and workflow files.
 
